@@ -56,13 +56,13 @@ def process_csv(input_file):
         for row in reader:
             serial = row['Serial Number'].strip()
             #machine_type = row.get('MTM Number', '').strip()
-            print(f"Searching for warranty info for {serial}...")
+            #print(f"Searching for warranty info for {serial}...")
             result = query_api(serial)
             row.update(result)
             writer.writerow(row)
 
-        print(f"Updated warranty information saved to {output_file}")
-            
+        
+    return output_file
 if __name__ == "__main__":
     args = sys.argv[1:]
     if not args:
