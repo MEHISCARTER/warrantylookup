@@ -43,26 +43,46 @@ def query_api(serial, machine_type=None):
                 "Product Model": "None"}
     return None
 
-def process_csv(input_file):
+def process_csv(input_file, progress_callback=None):
     base, ext = os.path.splitext(input_file)
     output_file = f"{base}_updated{ext}"
 
     with open(input_file, newline='') as infile, open(output_file, mode='w', newline='') as outfile:
         reader = csv.DictReader(infile)
+        rows = list(reader)
+        total = len(rows)
         fieldnames = reader.fieldnames
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
 
-        for row in reader:
+        # Iterate through each row in the CSV
+        for idx, row in enumerate(rows):
             serial = row['Serial Number'].strip()
+            asset_tag = row['Asset Tag'].strip()
+            manufacturer = row['Manufacturer'].strip()
+
+            #make search faster
+            if serial == '' and asset_tag == '':
+                continue
+            if manufacturer.lower() not in ['lenovo', None, 'lenovo monitor', 'lenovo laptop', 'lenovo desktop', 'lenovo dock']:
+                result = {
+                "Start/Purchase Date": "None",
+                "Warranty End": "None",
+                "Product Model": "None"}
+            else:
+                result = query_api(serial)
+                
             #machine_type = row.get('MTM Number', '').strip()
             #print(f"Searching for warranty info for {serial}...")
-            result = query_api(serial)
+            
             row.update(result)
             writer.writerow(row)
 
-        
+            if progress_callback:
+                progress_callback(idx + 1, total)
+
     return output_file
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if not args:
